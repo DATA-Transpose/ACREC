@@ -1,8 +1,11 @@
 from utils import *
+import scipy.signal as ss
+import dtcwt
+import numpy as np
+from sklearn import preprocessing
+import signal_load
 
-AAMI = [['.', 'N', 'L', 'R', 'e', 'j'], ['A', 'a', 'J', 'S'], ['V', 'E'], ['F'], ['/', 'f', 'Q', '!']]
-
-
+# Preprocess raw signal data and save them into npy files
 class DataPreprocess():
 
     def __init__(self, data_dict, records, fs, save_path):
@@ -16,6 +19,7 @@ class DataPreprocess():
         if not os.path.exists(self.save_path):
             os.makedirs(self.save_path)
 
+    # Denoise signals by dtcwt
     def dtcwt_denoise(self):
 
         for record in self.records:
@@ -26,6 +30,7 @@ class DataPreprocess():
 
             self.data_dict[record]['signal'] = denoised_signal
 
+    # Median filter signals
     def median_fit(self):
         for record in self.records:
             print(record + ' are filtered.')
@@ -34,7 +39,7 @@ class DataPreprocess():
 
             self.data_dict[record]['signal'] = np.array(self.data_dict[record]['signal']) - filter_2
 
-
+    # Segment signal in a fixed length
     def segmentation(self, normalization=False):
 
         for record in self.records:
@@ -53,6 +58,7 @@ class DataPreprocess():
             print(len(self.data_dict[record]['heartbeat']))
             print(len(self.data_dict[record]['category']))
 
+    # Segment signal in dynamic lengths
     def segmentation_dynamic(self, normalization=False):
 
         self.MeanLength()
@@ -79,6 +85,7 @@ class DataPreprocess():
             print(len(self.data_dict[record]['heartbeat']))
             print(len(self.data_dict[record]['category']))
 
+    # convert the category of heartbeat to AAMI standards
     def segmentation_category(self, category_list):
 
         class_list = [0, 0, 0, 0, 0]
@@ -107,14 +114,15 @@ class DataPreprocess():
         elif max_index == 3:
             return 'Q'
 
+    # normalize signals by StandardScaler
     def Nomalization(self, sig):
-        # min_max_scaler = preprocessing.MinMaxScaler()
+
         scaler_1 = preprocessing.StandardScaler()
 
         sig_2 = scaler_1.fit_transform(sig)
-        # scaler_2.fit(record_2.reshape(-1,1))
         return sig_2.reshape(1, -1)
 
+    # calculate mean length of the closed 20 signals
     def MeanLength(self):
         for record in self.records:
             self.avg_len[record] = []
@@ -124,18 +132,19 @@ class DataPreprocess():
                 avg_len = int(length / count)
                 self.avg_len[record].append(avg_len)
 
+    # save signal data into npy file
     def save_data(self):
         for record in self.records:
             np.save(self.save_path + record + 'Data', self.data_dict[record]['heartbeat'])
             np.save(self.save_path + record + 'Label', self.data_dict[record]['category'])
 
-
-load_path = './Data/mitdb/'
-save_path = './Data/save/'
-a = load.DataLoading(load_path, 'MITDB')
-
-dict_ = a.load_dataset()
-b = DataPreprocess(dict_, a.records, a.fs, save_path)
-b.median_fit()
-b.segmentation_dynamic(True)
-b.save_data()
+# Example code for pre-processing
+# load_path = './Data/mitdb/'
+# save_path = './Data/save/'
+# a = signal_load.DataLoading(load_path, 'MITDB')
+#
+# dict_ = a.load_dataset()
+# b = DataPreprocess(dict_, a.records, a.fs, save_path)
+# b.median_fit()
+# b.segmentation_dynamic(True)
+# b.save_data()

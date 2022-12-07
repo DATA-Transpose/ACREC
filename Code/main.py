@@ -1,32 +1,54 @@
+from utils import *
+import train as tr
+import sys
+import load
+import torch
+import model
+import train
 
+def MAIN():
+    random_setting()
 
-path = '/content/drive/My Drive/DATA7902/save/'
-train_data, train_label, test_data, test_label = LoadData(path, TRAIN, T2)
+    path = './save/'
+    encoder_dir = './Best_model/encoder.pt'
+    decoder_dir = './Best_model/decoder.pt'
+    classifier_dir = './Best_model/classifier.pt'
+    train_data, train_label = load.LoadData(path, TRAIN)
 
-N_data, S_data, V_data, F_data = DivideClass(train_data, train_label)
-#train_data, train_label = Balance_Data(N_data, S_data, V_data, F_data)
-train_x, train_y = Test_Data(N_data, S_data, V_data, F_data)
-train_loader = TrainLoader(train_x, train_y, 64, True)
-N_data, S_data, V_data, F_data = DivideClass(test_data, test_label)
-test_x, test_y = Test_Data(N_data, S_data, V_data, F_data)
-test_loader = TestLoader(test_x, test_y, 64, True)
+    N_data, S_data, V_data, F_data = load.DivideClass(train_data, train_label)
+    train_x, train_y = load.Test_Data(N_data, S_data, V_data, F_data)
+    train_loader = train.TrainLoader(train_x, train_y, 64, True)
 
-encoder_dir = '/content/drive/My Drive/DATA7902/Best_model/encoder_compare_nocausal.pt'
-decoder_dir = '/content/drive/My Drive/DATA7902/Best_model/decoder_compare_nocausal.pt'
-classifier_dir = '/content/drive/My Drive/DATA7902/Best_model/classifier_compare_nocausal.pt'
-encoder=torch.load(encoder_dir)
-decoder=torch.load(decoder_dir)
-classifier=torch.load(classifier_dir)
-test_records = TEST
-path = '/content/drive/My Drive/DATA7902/save/'
-data_dict, label_dict = LoadData3(path, [], TEST)
-report = active_learning_loop2(encoder, classifier, test_records, data_dict, label_dict, mode = 'prob', q_size = 5, Epoch = 50)
+    if Stage == 'Pretrain':
+        encoder = model.LSTM_CNNEncoder()
+        decoder = model.LSTM_CNNDecoder()
+        classifier = model.Classifier()
+        encoder, decoder, classifier = train.Pretrain_Causal(encoder, decoder, classifier, train_loader, GPU_device=True,
+                                                             alpha=0.95, beta=0.05, Epoch=100, causal=True)
 
+        torch.save(encoder, encoder_dir)
+        torch.save(decoder, decoder_dir)
+        torch.save(classifier, classifier_dir)
+    else:
 
-encoder=torch.load(encoder_dir)
-decoder=torch.load(decoder_dir)
-classifier=torch.load(classifier_dir)
-test_records = TRAIN + TEST
-path = '/content/drive/My Drive/DATA7902/save/'
-data_dict, label_dict = LoadData3(path, TRAIN, TEST)
-report = active_learning_loop2(encoder, classifier, test_records, data_dict, label_dict, mode = 'prob', q_size = 5, Epoch = 30)
+        encoder=torch.load(encoder_dir)
+        classifier=torch.load(classifier_dir)
+        if Dataset_Names == 'TEST':
+            test_records = TEST
+        else:
+            test_records = SVDB
+
+        data_dict, label_dict = load.LoadDataDict(path, TEST)
+        report = train.active_learning_loop(encoder, classifier, test_records, data_dict, label_dict, mode = 'prob', q_size = 5, Epoch = 50)
+        print(report)
+
+if __name__ == "__main__":
+
+    # Read settings
+    for i in range(len(sys.argv)):
+        if sys.argv[i] == '--Dataset_Name':
+            Dataset_Names = sys.argv[i + 1]
+        if sys.argv[i] == '--Stage' and i + 1 < len(sys.argv):
+            Stage = sys.argv[i + 1]
+
+    MAIN()

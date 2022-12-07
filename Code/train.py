@@ -1,4 +1,13 @@
 from utils import *
+import torch
+import torch.utils.data as Data
+import torch.utils.data as data_utils
+import numpy as np
+import torch.nn as nn
+import load
+from sklearn.metrics import classification_report
+import torch.nn.functional as F
+from sklearn.metrics import confusion_matrix
 
 def TrainLoader(train_data, train_label, batch_size, shuffle):
     #trainset = TrainDataset(train_data, train_label)
@@ -137,14 +146,14 @@ def Pretrain_Causal(encoder, decoder, classifier, train_loader, lr=0.001, GPU_de
     return encoder, decoder, classifier
 
 
-def active_learning_loop2(encoder, classifier, test_records, data_dict, label_dict, mode='prob', q_size=50, lr=0.0005,
+def active_learning_loop(encoder, classifier, test_records, data_dict, label_dict, mode='prob', q_size=50, lr=0.0005,
                           GPU_device=True, Epoch=20):
     optimizer1 = torch.optim.NAdam(classifier.parameters(), lr, betas=(0.9, 0.999), eps=1e-07)
     optimizer2 = torch.optim.NAdam(encoder.parameters(), lr, betas=(0.9, 0.999), eps=1e-07)
     running_loss = 0.0
     min_loss = 100000.0
     batch_size = 64
-    model_dir = '/content/drive/My Drive/DATA7902/Best_model/best_model.pt'
+    model_dir = './Best_model/best_model.pt'
     extra_label = []
     extra_data = []
     reports = []
@@ -155,8 +164,8 @@ def active_learning_loop2(encoder, classifier, test_records, data_dict, label_di
         max_probs = []
         test_data = data_dict[record]
         test_label = label_dict[record]
-        N_data, S_data, V_data, F_data = DivideClass(test_data, test_label)
-        test_x, test_y = Test_Data(N_data, S_data, V_data, F_data)
+        N_data, S_data, V_data, F_data = load.DivideClass(test_data, test_label)
+        test_x, test_y = load.Test_Data(N_data, S_data, V_data, F_data)
         test_loader = TestLoader(test_x, test_y, 128, False)
         with torch.no_grad():
             for idx, data in enumerate(test_loader):

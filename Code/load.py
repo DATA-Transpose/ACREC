@@ -1,51 +1,27 @@
 from utils import *
+import numpy as np
 
 
-def LoadData(path, train_records, test_records):
-    train_data = []
-    train_label = []
-    for record in train_records:
+
+def LoadData(path, records):
+    datas = []
+    labels = []
+    for record in records:
         data_file = record + 'Data.npy'
         label_file = record + 'Label.npy'
         data = np.load(path + data_file, allow_pickle=True)
         data.astype(np.float32)
         label = np.load(path + label_file, allow_pickle=True)
-        train_data += list(data)
-        train_label += list(label)
+        datas += list(data)
+        labels += list(label)
 
-    test_data = []
-    test_label = []
-    for record in test_records:
-        data_file = record + 'Data.npy'
-        label_file = record + 'Label.npy'
-        data = np.load(path + data_file, allow_pickle=True)
-        data.astype(np.float32)
-        label = np.load(path + label_file, allow_pickle=True)
-        test_data += list(data)
-        test_label += list(label)
-
-    return np.array(train_data), np.array(train_label), np.array(test_data), np.array(test_label)
+    return np.array(datas), np.array(labels)
 
 
-def LoadData2(path, train_records, test_records):
-    train_data = []
-    train_label = []
-    for record in train_records + test_records:
-        data_file = record + 'Data.npy'
-        label_file = record + 'Label.npy'
-        data = np.load(path + data_file, allow_pickle=True)
-        data.astype(np.float32)
-        label = np.load(path + label_file, allow_pickle=True)
-        train_data += list(data)
-        train_label += list(label)
-
-    return np.array(train_data), np.array(train_label)
-
-
-def LoadData3(path, train_records, test_records):
+def LoadDataDict(path, records):
     data_dict = {}
     label_dict = {}
-    for record in train_records + test_records:
+    for record in records:
         data_file = record + 'Data.npy'
         label_file = record + 'Label.npy'
         data = np.load(path + data_file, allow_pickle=True)
@@ -93,5 +69,4 @@ def Test_Data(N_data, S_data, V_data, F_data):
     f_label = [3 for i in range(len(F_data))]
     test_data = n_sample + s_sample + v_sample + f_sample
     test_label = n_label + s_label + v_label + f_label
-    # test_data = [test_data[i].reshape((73,73)) for i in range(len(test_data))]
     return np.array(test_data), np.array(test_label)

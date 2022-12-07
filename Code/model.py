@@ -1,5 +1,9 @@
 from utils import *
-
+import torch
+import numpy as np
+import torch.nn as nn
+import load
+import torch.nn.functional as F
 
 class LSTM_CNNEncoder(nn.Module):
     def __init__(self, K=16):
@@ -16,18 +20,14 @@ class LSTM_CNNEncoder(nn.Module):
         self.fc1 = nn.Linear(1184, K)
 
     def forward(self, x):
-        # print('1: ', x.shape)
         batch_size = x.size(0)
         x = x.squeeze(1)
         x = x.unsqueeze(2)
-        # print('2: ', x.shape)
         out_rnn, (h_n, h_c) = self.rnn(x, None)
         out_rnn = self.drop1(out_rnn[:, -1, :])
-        # print('3: ', out_rnn.shape)
         x = x.squeeze(2)
         x = x.unsqueeze(1)
         x = self.conv1(x)
-        # print('4: ', x.shape)
         x = F.relu(self.pooling1(self.bn1(x)))
         x = self.conv2(x)
         x = F.relu(self.pooling2(self.bn2(x)))
@@ -36,7 +36,6 @@ class LSTM_CNNEncoder(nn.Module):
         batch_size = x.size(0)
         x = out_rnn + out_cnn
         out = self.fc1(x)
-        # print('out: ', out.shape)
         return out
 
 
@@ -49,16 +48,10 @@ class LSTM_CNNDecoder(nn.Module):
 
     def forward(self, x):
         batch_size = x.size(0)
-        # print('1: ', x.shape)
         x = F.relu(self.fc1(F.relu(x)))
-        # print('2: ', x.shape)
         x = x.view(batch_size, 16, -1)
-        # print('3: ', x.shape)
         x = F.relu(self.dconv1(x))
-        # print('4: ', x.shape)
-        # print('5: ', x.shape)
         out = self.dconv2(x)
-        # print('6: ', out.shape)
 
         return out
 
