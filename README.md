@@ -1,4 +1,4 @@
-# ACREC: ctive Causal Representation Learning of ECG Classification
+# ACREC: Active Causal Representation Learning of ECG Classification
 
 [AJCAI 2022] Shaofei Shen, Weitong Chen, Miao Xu*
 
